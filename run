@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+# Set $here to the full path to this script
+me=${BASH_SOURCE[0]}
+myname=$(basename "${me%-*}")
+$myname run -it --rm -p 2020:8080 -p 3000:3000 -p 3001:3001 -p 3002:3002 -p 3003:3003 slamd "$@"
+# vim: set foldmethod=marker et ts=4 sts=4 sw=4 :
