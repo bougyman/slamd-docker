@@ -1,2 +1,2 @@
 #!/bin/sh
-exec /usr/src/slamd/build/package/slamd/start-slamd-server.sh 2>&1
+exec /usr/local/slamd/start-slamd-server.sh 2>&1

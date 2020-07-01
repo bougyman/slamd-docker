@@ -46,5 +46,6 @@ shift $((OPTIND-1))
 
 : "${name:=slamd}"
 
-$myname run -it --rm -p 2020:8080 -p 3000:3000 -p 3001:3001 -p 3002:3002 -p 3003:3003 "$name" "$@"
+[ -d /tmp/slamd-mux ] || mkdir -p /tmp/slamd-mux
+$myname run -it --rm -v /tmp/slamd-mux:/tmp/mux -p 2020:8080 -p 3000:3000 -p 3001:3001 -p 3002:3002 -p 3003:3003 "$name" "$@"
 # vim: set foldmethod=marker et ts=4 sts=4 sw=4 :

@@ -1,0 +1,2 @@
+#!/bin/bash
+exec tmux -D -S /tmp/mux/slamd-void 2>&1
