@@ -1,0 +1,22 @@
+FROM voidlinux/voidlinux
+RUN xbps-install -Sy tmux base-devel openjdk11 ncurses-base bash vim && \
+    sed -i 's/^#en_US/en_US/' /etc/default/libc-locales && \
+    xbps-reconfigure -f glibc-locales && \
+    xbps-reconfigure -a && \
+    ls -d /usr/share/locale/* | egrep -v 'en_US|locale.alias' | xargs rm -rf && \
+    ls /usr/share/i18n/locales/* | egrep -v 'en_US|locale.alias' | xargs rm -vf && \
+    rm -rvf /usr/share/X11 && \
+    rm -rvf /usr/share/info/* && \
+    rm -rvf /usr/share/doc/* && \
+    rm -rvf /usr/share/man/* && \
+    rm -rvf /usr/lib/gconv/libCNS.so /usr/lib/gconv/IBM* /usr/lib/gconv/BIG5HKSCS.so && \
+    rm -rvf /var/cache/xbps/*
+COPY upstream /usr/src/slamd
+COPY tmux /usr/src/tmux
+COPY service/slamd-server /etc/sv/slamd-server
+WORKDIR /usr/src/slamd
+RUN ./build.sh && sed -i -e 's/\(exec.*\) start/\1 run/' build/package/slamd/bin/startup.sh && \
+    mkdir -p /etc/runit/runsvdir/slamd && ln -s /etc/runit/runsvdir/current /service && \
+    runsvchdir slamd && ln -s /etc/sv/slamd /service/
+CMD /usr/bin/tmux
+#CMD ./build/package/slamd/start-slamd-server.sh
