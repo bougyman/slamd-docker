@@ -50,7 +50,9 @@ done # }}}
 shift $((OPTIND-1))
 
 : "${name:=slamd}"
-[ -d /tmp/slamd-mux ] || mkdir -p /tmp/slamd-mux
+
+muxdir=/tmp/slamd-mux.$$
+[ -d "$muxdir" ] || mkdir -vp "$muxdir"
 
 : "${db:=empty}"
 dbdir="$here/db/$db"
@@ -60,13 +62,28 @@ dbdir="$here/db/$db"
 echo "SLAMD_ADDRESS is $SLAMD_ADDRESS" >&2
 echo "Starting SLAMD" >&2
 
-$myname run -it --rm \
-            -e SLAMD_ADDRESS="$SLAMD_ADDRESS" \
-            -v "${dbdir}":/usr/local/slamd/webapps/slamd/WEB-INF/db \
-            -v /tmp/slamd-mux:/tmp/mux -p 2020:8080 \
-            -p 3000:3000 \
-            -p 3001:3001 \
-            -p 3002:3002 \
-            -p 3003:3003 \
-            "$name" "$@"
+: "${NO_SLAMD_SERVER:=}"
+
+if [ -z "$NO_SLAMD_SERVER" ]
+then
+	echo "Starting SLAMD server with one client locally" >&2
+	$myname run -it --rm \
+		    -e SLAMD_NO_SERVER="$NO_SLAMD_SERVER" \
+		    -e SLAMD_ADDRESS="$SLAMD_ADDRESS" \
+		    -v "${dbdir}":/usr/local/slamd/webapps/slamd/WEB-INF/db \
+		    -v "$muxdir":/tmp/mux -p 2020:8080 \
+		    -p 3000:3000 \
+		    -p 3001:3001 \
+		    -p 3002:3002 \
+		    -p 3003:3003 \
+		    "$name" "$@"
+else
+	echo "Starting SLAMD client only" >&2
+	$myname run -it --rm \
+		    -e SLAMD_NO_SERVER="$NO_SLAMD_SERVER" \
+		    -e SLAMD_ADDRESS="$SLAMD_ADDRESS" \
+		    -v "${dbdir}":/usr/local/slamd/webapps/slamd/WEB-INF/db \
+		    -v "$muxdir":/tmp/mux \
+		    "$name" "$@"
+fi
 # vim: set foldmethod=marker et ts=4 sts=4 sw=4 :
