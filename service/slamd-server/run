@@ -1,2 +1,9 @@
 #!/bin/sh
-exec /usr/local/slamd/start-slamd-server.sh 2>&1
+exec 2>&1
+if [ -z "$SLAMD_NO_SERVER" ]
+then
+    exec /usr/local/slamd/start-slamd-server.sh 2>&1
+else
+    echo "SLAMD_NO_SERVER is set, not starting server" >&2
+    exec pause
+fi
