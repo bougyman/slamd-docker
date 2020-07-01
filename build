@@ -9,6 +9,7 @@ usage() { # {{{
     Usage: $0 <options> [ARGS]
         Options:
           -n NAME - The name of the container to start
+          -d DB   - The db dir in ./db/
           -h      - Show usage
 
           ARGS are passed to docker / podman as arguments
@@ -47,6 +48,7 @@ do
             ;;
     esac
 done # }}}
+
 shift $((OPTIND-1))
 
 : "${name:=slamd}"
@@ -56,5 +58,5 @@ shift $((OPTIND-1))
 dbdir="$here/db/$db"
 [ -d "${dbdir}" ] || mkdir -vp "${dbdir}"
 
-$myname run -it --rm -v "${dbdir}":/usr/local/slamd/webapps/slamd/WEB-INF/db -v /tmp/slamd-mux:/tmp/mux -p 2020:8080 -p 3000:3000 -p 3001:3001 -p 3002:3002 -p 3003:3003 "$name" "$@"
+$myname build . -t "$name"
 # vim: set foldmethod=marker et ts=4 sts=4 sw=4 :

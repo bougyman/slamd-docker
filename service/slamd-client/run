@@ -1,0 +1,5 @@
+#!/bin/sh
+exec 2>&1
+: "${SLAMD_ADDRESS:=127.0.0.1}"
+sed -ie "s/^SLAMD_ADDRESS=.*/SLAMD_ADDRESS=$SLAMD_ADDRESS/" /usr/local/slamd/slamd-client/slamd-client.conf
+exec /usr/local/slamd/slamd-client/start-client.sh 2>&1
