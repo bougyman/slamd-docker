@@ -32,5 +32,6 @@ COPY service/slamd-server /etc/sv/slamd-server
 COPY service/slamd-client /etc/sv/slamd-client
 COPY service/tmux /etc/sv/tmux
 WORKDIR /home/slamd
+# For debugging
 #CMD /usr/local/bin/tmux
-ENTRYPOINT runsvdir -P /service 'LOG: ..............................................'
+ENTRYPOINT ["/sbin/runsvdir", "-P", "/service", "'LOG: ..............................................'"]

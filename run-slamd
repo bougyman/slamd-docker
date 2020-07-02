@@ -91,7 +91,7 @@ if [ -z "$NO_SLAMD_SERVER" ]
 then
 	echo "Starting SLAMD server with one client locally" >&2
     # shellcheck disable=SC2086
-	$myname run -it --rm \
+	exec $myname run -it --rm \
             -e SLAMD_NO_SERVER="$NO_SLAMD_SERVER" \
             -e SLAMD_ADDRESS="$SLAMD_ADDRESS" \
             -v "${dbdir}":/usr/local/slamd/webapps/slamd/WEB-INF/db \
@@ -102,7 +102,7 @@ then
 else
 	echo "Starting SLAMD client only" >&2
     # shellcheck disable=SC2086
-	$myname run -it --rm \
+	exec $myname run -it --rm \
             -e SLAMD_NO_SERVER="$NO_SLAMD_SERVER" \
             -e SLAMD_ADDRESS="$SLAMD_ADDRESS" \
             -e slam_port="${slam_port}" \
