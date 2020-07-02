@@ -1,4 +1,4 @@
 #!/bin/sh
-[ -d /var/log/tmux ] || mkdir -p /var/log/tmux
+[ -d /var/log/tmux ] || mkdir -vp /var/log/tmux
 [ -L ./current ] || ln -s /var/log/tmux/current ./current
 exec svlogd -t /var/log/tmux
