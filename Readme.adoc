@@ -1,0 +1,39 @@
+# Slamd container
+ifdef::env-github[]
+:tip-caption: :bulb:
+:note-caption: :information_source:
+:important-caption: :heavy_exclamation_mark:
+:caution-caption: :fire:
+:warning-caption: :warning:
+endif::[]
+:toc:
+
+This repository hosts containerized slamd distrited load generator.
+
+## Building
+
+To build the containers, first clone this repository, then update the submodules and run 
+either `./podman-build` or `./docker-build`, depending on your preferred container tool.
+
+TIP: The service supervision scripts are built for podman. Adjustment will be needed to run them under docker
+
+## Running The Server
+
+To start the server, simply run `./podman-run` or `./docker-run`. You only want one instance of the slamd server.
+Once it's running, you can check `podman ps` or `docker ps` to find out where the web port is (what is mapped to 8080 in the container).
+Connect to that port in a web browser using http://localhost:PORT and you should see the slamd server running with one client
+connected from 127.0.0.1
+
+## Running the clients
+
+Since the clients have to figure out the proper ports, you can start them with the `sv/slamd-client/run` script, and it will automatically
+figure out the ports and start a client connected to the slamd server that's already running. To start clients from other machines, use
+the cli options to set slamd server's host (SLAMD_ADDRESS) as well as the 3 port specifications. See `./podman-run -h` or `./docker-run -h`
+for the option specifications.
+
+## Configuration
+
+Configuration of the client and server can be done before building, in the upstream/ directory which is the slamd distribution. Further
+work will be done to this process to make runtime configuration possible and streamlined, probably using configuration mounted with -v.
+
+
