@@ -1,0 +1,65 @@
+#!/bin/bash
+exec 2>&1
+: "${RUNNER:=podman}"
+slamd_running=$($RUNNER ps --filter label=slamd_server --format "{{.ID}}")
+if [ ! -z "$slamd_running" ]
+then
+    echo "Slamd running, id: ${slamd_running}" 2>&1
+    network=$($RUNNER container inspect "${slamd_running}" | jq '.[] | .NetworkSettings')
+    ip=$(echo "$network"| jq '.IPAddress' -r)
+    ports=$(echo "$network"| jq '.Ports')
+    key=$(echo "$ports" | jq '. | keys[0]' -r)
+    if [ "$key" = "0" ]
+    then
+        echo "Slamd's running under podman" >&2
+        : "${ip:=10.0.2.3}"
+        slam_port=$(echo "$ports" | jq '.[0] | .hostPort' -r)
+        slamd_manager_port=$(echo "$ports" | jq '.[1] | .hostPort' -r)
+        slamd_unused_port=$(echo "$ports" | jq '.[2] | .hostPort' -r)
+        slamd_stats_port=$(echo "$ports" | jq '.[3] | .hostPort' -r)
+        web_port=$(echo "$ports" | jq '.[4] | .hostPort' -r)
+    else
+        echo "Slamd's running under docker" >&2
+        slam_port=$(echo "$ports" | jq ' .["3000/tcp"][] | .HostPort' -r)
+        slamd_manager_port=$(echo "$ports" | jq ' .["3001/tcp"][] | .HostPort' -r)
+        slamd_unused_port=$(echo "$ports" | jq ' .["3002/tcp"][] | .HostPort' -r)
+        slamd_stats_port=$(echo "$ports" | jq ' .["3003/tcp"][] | .HostPort' -r)
+        web_port=$(echo "$ports" | jq ' .["8080/tcp"][] | .HostPort' -r)
+    fi
+else
+    echo "Slamd doesn't appear to be running here $slamd_running" >&2
+fi
+
+# If $SLAMD_ADDRESS isn't set, try to find a sane address
+if [ -z "$SLAMD_ADDRESS" ]
+then
+    if [[ "$ip" =~ ^172\.17\.0 ]]
+    then
+        echo "This appears to be docker's default network, using 172.17.0.1 for server address" >&2
+        SLAMD_ADDRESS=172.17.0.1
+    elif [[ "$ip" =~ ^10.0.2 ]]
+    then
+        echo "This appears to be podman's default network, using 10.0.2.3 for server address" >&2
+        SLAMD_ADDRESS=10.0.2.3
+    elif [ -z "$ip" ]
+    then
+        echo "Could not determine an IP for slamd, defaulting to 127.0.0.1" >&2
+        SLAMD_ADDRESS=127.0.0.1
+    else
+        echo "This does not seem to be a default container ip: '${ip}', using it for the SLAMD_ADDRESS" >&2
+        SLAMD_ADDRESS=$ip
+    fi
+fi
+
+: "${web_port:=8080}"
+: "${slam_port:=3000}"
+: "${slamd_manager_port:=3001}"
+: "${slamd_unused_port:=3002}"
+: "${slamd_stats_port:=3003}"
+
+echo "Slamd IP: ${SLAMD_ADDRESS}, Web: ${web_port}, Slamd Client port: ${slam_port}" >&2
+# Do not run the server, just client
+NO_SLAMD_SERVER=1
+
+export SLAMD_ADDRESS web_port slam_port slamd_manager_port slamd_unused_port slamd_stats_port NO_SLAMD_SERVER
+exec ./$RUNNER-run

@@ -1,2 +1,5 @@
 #!/bin/sh
-exec svlogd ./
+exec 2>&1
+[ -d /var/log/slamd-client ] || mkdir -vp /var/log/slamd-client
+[ -L ./current ] || ln -s /var/log/slamd-client/current ./current
+exec svlogd /var/log/slamd-client

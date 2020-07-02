@@ -8,7 +8,12 @@ usage() { # {{{
     cat <<-EOT
     Usage: $0 <options> [ARGS]
         Options:
-          -n NAME - The name of the container to start
+          -P PORT - The client listener port of SLAMD (Default: 3000)
+          -m PORT - The client manager port of SLAMD (Default: 3001)
+          -s PORT - The client statistics port of SLAMD (Default: 3003)
+          -n NAME - The name of the container to start (Default: slamd)
+          -d DB   - The db name (in ./db/) to use for slamd (Default: empty)
+          -E ARGS - Extra options passed to docker / podman
           -h      - Show usage
 
           ARGS are passed to docker / podman as arguments
@@ -26,7 +31,7 @@ die() { # {{{
     exit $code
 } # }}}
 
-while getopts :hn:d: opt # {{{
+while getopts :hn:d:s:m:P:E:N opt # {{{
 do 
     case $opt in
         n)
@@ -34,6 +39,21 @@ do
             ;;
         d)
             db=$OPTARG
+            ;;
+        s)
+            slamd_stats_port=$OPTARG
+            ;;
+        m)
+            slamd_manager_port=$OPTARG
+            ;;
+        P)
+            slam_port=$OPTARG
+            ;;
+        E)
+            extra_opts="$OPTARG"
+            ;;
+        N)
+            NO_SLAMD_SERVER=1
             ;;
         h) 
             usage
@@ -63,27 +83,33 @@ echo "SLAMD_ADDRESS is $SLAMD_ADDRESS" >&2
 echo "Starting SLAMD" >&2
 
 : "${NO_SLAMD_SERVER:=}"
+: "${slam_port:=3000}"
+: "${slam_manager_port:=3001}"
+: "${slam_stats_port:=3003}"
 
 if [ -z "$NO_SLAMD_SERVER" ]
 then
 	echo "Starting SLAMD server with one client locally" >&2
-	$myname run -it --rm \
-		    -e SLAMD_NO_SERVER="$NO_SLAMD_SERVER" \
-		    -e SLAMD_ADDRESS="$SLAMD_ADDRESS" \
-		    -v "${dbdir}":/usr/local/slamd/webapps/slamd/WEB-INF/db \
-		    -v "$muxdir":/tmp/mux -p 2020:8080 \
-		    -p 3000:3000 \
-		    -p 3001:3001 \
-		    -p 3002:3002 \
-		    -p 3003:3003 \
-		    "$name" "$@"
-else
-	echo "Starting SLAMD client only" >&2
+    # shellcheck disable=SC2086
 	$myname run -it --rm \
 		    -e SLAMD_NO_SERVER="$NO_SLAMD_SERVER" \
 		    -e SLAMD_ADDRESS="$SLAMD_ADDRESS" \
 		    -v "${dbdir}":/usr/local/slamd/webapps/slamd/WEB-INF/db \
 		    -v "$muxdir":/tmp/mux \
-		    "$name" "$@"
+            --expose 3000-3003 --expose 8080 -P \
+            --label slamd_server \
+		    $extra_opts "$name" "$@" 
+else
+	echo "Starting SLAMD client only" >&2
+    # shellcheck disable=SC2086
+	$myname run -it --rm \
+		    -e SLAMD_NO_SERVER="$NO_SLAMD_SERVER" \
+		    -e SLAMD_ADDRESS="$SLAMD_ADDRESS" \
+            -e slam_port="${slam_port}" \
+            -e slamd_manager_port="${slamd_manager_port}" \
+            -e slamd_stats_port="${slamd_stats_port}" \
+            --label slamd_client \
+		    -v "$muxdir":/tmp/mux \
+		    $extra_opts "$name" "$@"
 fi
 # vim: set foldmethod=marker et ts=4 sts=4 sw=4 :

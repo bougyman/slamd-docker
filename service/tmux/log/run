@@ -1,2 +1,4 @@
 #!/bin/sh
-exec svlogd -t ./
+[ -d /var/log/tmux ] || mkdir -p /var/log/tmux
+[ -L ./current ] || ln -s /var/log/tmux/current ./current
+exec svlogd -t /var/log/tmux

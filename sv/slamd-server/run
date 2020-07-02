@@ -1,0 +1,6 @@
+#!/bin/sh
+exec 2>&1
+: "${RUNNER:=podman}"
+pwd=$(pwd)
+exec ./$RUNNER-run -E "-v $pwd/log/server:/var/log/slamd-server -v $pwd/log/client:/var/log/slamd-client -v $pwd/log/tmux:/var/log/tmux" 2>&1
+#exec ./$RUNNER-run -E "-v $pwd/log/server:/var/log/slamd-server -v $pwd/log/client:/var/log/slamd-client -v $pwd/log/tmux:/var/log/tmux" 2>&1

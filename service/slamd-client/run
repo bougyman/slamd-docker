@@ -1,5 +1,13 @@
 #!/bin/sh
 exec 2>&1
 : "${SLAMD_ADDRESS:=127.0.0.1}"
-sed -ie "s/^SLAMD_ADDRESS=.*/SLAMD_ADDRESS=$SLAMD_ADDRESS/" /usr/local/slamd/slamd-client/slamd-client.conf
+: "${slam_port:=3000}"
+: "${slamd_manager_port:=3001}"
+: "${slamd_stats_port:=3003}"
+sed -i \
+    -e "s/^SLAMD_ADDRESS=.*/SLAMD_ADDRESS=$SLAMD_ADDRESS/" \
+    -e "s/^SLAMD_LISTEN_PORT=.*/SLAMD_LISTEN_PORT=$slam_port/" \
+    -e "s/^SLAMD_MANAGER_PORT=.*/SLAMD_MANAGER_PORT=$slamd_manager_port/" \
+    -e "s/^SLAMD_STAT_PORT=.*/SLAMD_STAT_PORT=$slamd_stats_port/" \
+    /usr/local/slamd/slamd-client/slamd-client.conf
 exec /usr/local/slamd/slamd-client/start-client.sh 2>&1

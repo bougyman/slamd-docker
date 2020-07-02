@@ -1,2 +1,8 @@
 #!/bin/bash
-exec tmux -D -S /tmp/mux/slamd-void 2>&1
+exec 2>&1
+if [ ! -z "$SLAMD_NO_SERVER" ]
+then
+    echo "Found /service/slamd-server but \$SLAMD_NO_SERVER is set to $SLAMD_NO_SERVER, disabling server" >&2
+    rm -v /service/slamd-server
+fi
+exec tmux -D -S /tmp/mux/slamd-void
