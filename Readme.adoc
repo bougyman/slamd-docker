@@ -8,7 +8,7 @@ ifdef::env-github[]
 endif::[]
 :toc:
 
-This repository hosts containerized slamd distrited load generator.
+This repository hosts containerized slamd distributed load generator.
 
 ## Building
 
