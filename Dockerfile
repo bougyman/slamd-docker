@@ -2,8 +2,7 @@ FROM voidlinux/voidlinux
 COPY tmux /usr/src/tmux
 RUN xbps-install -Syu xbps && \
     xbps-install -Syu && \
-    xbps-install -Sy base-devel openjdk11 ncurses-base ncurses-devel bash && \
-    xbps-install -y libevent-devel && \
+    xbps-install -y libevent-devel base-devel openjdk11 ncurses-base ncurses-devel bash && \
     sed -i 's/^#en_US/en_US/' /etc/default/libc-locales && \
     xbps-reconfigure -f glibc-locales && \
     xbps-reconfigure -a && \
@@ -20,7 +19,7 @@ RUN xbps-install -Syu xbps && \
     xbps-remove -y m4 autoconf automake bc binutils-doc binutils bison ed libfl-devel flex libgcc-devel \
                    libstdc++-devel libssp libssp-devel kernel-libc-headers glibc-devel gcc gettext-libs \
                    gettext groff libtool make base-minimal binutils patch base-devel perl \
-                   texinfo libressl-devel libevent-devel
+                   texinfo libressl-devel libevent-devel ncurses-devel
 COPY upstream /usr/src/slamd
 RUN cd /usr/src/slamd && ./build.sh && sed -i -e 's/\(exec.*\) start/\1 run/' build/package/slamd/bin/startup.sh && \
     mkdir -p /etc/runit/runsvdir/slamd && ln -s /etc/runit/runsvdir/current /service && \

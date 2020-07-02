@@ -2,6 +2,7 @@
 
 me=${BASH_SOURCE[0]}
 myname=$(basename "${me%-*}")
+
 [ -L "$me" ] && me=$(readlink -f "$me")
 here=$(cd "$(dirname "$me")" && pwd)
 usage() { # {{{
@@ -14,6 +15,9 @@ usage() { # {{{
           -n NAME - The name of the container to start (Default: slamd)
           -d DB   - The db name (in ./db/) to use for slamd (Default: empty)
           -E ARGS - Extra options passed to docker / podman
+          -N      - Do not run slamd server, client-only
+          -R      - Do not remove the container when the process stops
+          -i IP   - The IP / Hostname of the slamd server for clients to connect to (Only makes sense in client-only mode)
           -h      - Show usage
 
           ARGS are passed to docker / podman as arguments
@@ -31,7 +35,7 @@ die() { # {{{
     exit $code
 } # }}}
 
-while getopts :hn:d:s:m:P:E:N opt # {{{
+while getopts :hn:d:s:m:P:E:i:NR opt # {{{
 do 
     case $opt in
         n)
@@ -42,6 +46,9 @@ do
             ;;
         s)
             slamd_stats_port=$OPTARG
+            ;;
+        i)
+            SLAMD_ADDRESS=$OPTARG
             ;;
         m)
             slamd_manager_port=$OPTARG
@@ -54,6 +61,9 @@ do
             ;;
         N)
             NO_SLAMD_SERVER=1
+            ;;
+        R)
+            rm=""
             ;;
         h) 
             usage
@@ -68,6 +78,15 @@ do
     esac
 done # }}}
 shift $((OPTIND-1))
+
+: "${rm:=--rm}"
+
+if [ "$myname" = "podman" ]
+then
+    exec="exec podman run -it $rm"
+else
+    exec="$myname run -d $rm"
+fi
 
 : "${name:=slamd}"
 
@@ -90,19 +109,50 @@ echo "Starting SLAMD" >&2
 if [ -z "$NO_SLAMD_SERVER" ]
 then
 	echo "Starting SLAMD server with one client locally" >&2
-    # shellcheck disable=SC2086
-	exec $myname run -it --rm \
-            -e SLAMD_NO_SERVER="$NO_SLAMD_SERVER" \
+    if [ "$myname" = "docker" ]
+    then
+        set -x
+        # shellcheck disable=SC2086
+	    container=$($exec \
+                        -e SLAMD_ADDRESS="$SLAMD_ADDRESS" \
+                        -v "${dbdir}":/usr/local/slamd/webapps/slamd/WEB-INF/db \
+                        -v "$muxdir":/tmp/mux \
+                        --expose 3000-3003 --expose 8080 -P \
+                        --label slamd_server \
+                        $extra_opts "$name" "$@")
+        echo "Container is '$container'"
+        "$myname" container ls -f "id=$container"
+    else
+        set -x
+        # shellcheck disable=SC2086
+	    $exec \
             -e SLAMD_ADDRESS="$SLAMD_ADDRESS" \
             -v "${dbdir}":/usr/local/slamd/webapps/slamd/WEB-INF/db \
             -v "$muxdir":/tmp/mux \
             --expose 3000-3003 --expose 8080 -P \
             --label slamd_server \
             $extra_opts "$name" "$@" 
+    fi
 else
 	echo "Starting SLAMD client only" >&2
-    # shellcheck disable=SC2086
-	exec $myname run -it --rm \
+    if [ "$myname" = "docker" ]
+    then
+        set -x
+        # shellcheck disable=SC2086
+	    container=$($exec \
+                        -e SLAMD_NO_SERVER="$NO_SLAMD_SERVER" \
+                        -e SLAMD_ADDRESS="$SLAMD_ADDRESS" \
+                        -e slam_port="${slam_port}" \
+                        -e slamd_manager_port="${slamd_manager_port}" \
+                        -e slamd_stats_port="${slamd_stats_port}" \
+                        --label slamd_client \
+                        -v "$muxdir":/tmp/mux \
+                        $extra_opts "$name" "$@")
+        "$myname" container ls -f "id=$container"
+    else
+        set -x
+        # shellcheck disable=SC2086
+        $exec \
             -e SLAMD_NO_SERVER="$NO_SLAMD_SERVER" \
             -e SLAMD_ADDRESS="$SLAMD_ADDRESS" \
             -e slam_port="${slam_port}" \
@@ -111,5 +161,6 @@ else
             --label slamd_client \
             -v "$muxdir":/tmp/mux \
             $extra_opts "$name" "$@"
+    fi
 fi
 # vim: set foldmethod=marker et ts=4 sts=4 sw=4 :

@@ -13,11 +13,11 @@ then
     then
         echo "Slamd's running under podman" >&2
         : "${ip:=10.0.2.3}"
-        slam_port=$(echo "$ports" | jq '.[0] | .hostPort' -r)
-        slamd_manager_port=$(echo "$ports" | jq '.[1] | .hostPort' -r)
-        slamd_unused_port=$(echo "$ports" | jq '.[2] | .hostPort' -r)
-        slamd_stats_port=$(echo "$ports" | jq '.[3] | .hostPort' -r)
-        web_port=$(echo "$ports" | jq '.[4] | .hostPort' -r)
+        slam_port=$(echo "$ports" | jq '.[] | select(.containerPort==3000) | .hostPort')
+        slamd_manager_port=$(echo "$ports" | jq '.[] | select(.containerPort==3001) | .hostPort')
+        slamd_unused_port=$(echo "$ports" | jq '.[] | select(.containerPort==3002) | .hostPort')
+        slamd_stats_port=$(echo "$ports" | jq '.[] | select(.containerPort==3003) | .hostPort')
+        web_port=$(echo "$ports" | jq '.[] | select(.containerPort==8080) | .hostPort')
     else
         echo "Slamd's running under docker" >&2
         slam_port=$(echo "$ports" | jq ' .["3000/tcp"][] | .HostPort' -r)
@@ -62,4 +62,5 @@ echo "Slamd IP: ${SLAMD_ADDRESS}, Web: ${web_port}, Slamd Client port: ${slam_po
 NO_SLAMD_SERVER=1
 
 export SLAMD_ADDRESS web_port slam_port slamd_manager_port slamd_unused_port slamd_stats_port NO_SLAMD_SERVER
-exec ./$RUNNER-run
+pwd=$(pwd)
+exec ./$RUNNER-run -E "-v $pwd/log/client:/var/log/slamd-client -v $pwd/log/tmux:/var/log/tmux"
