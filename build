@@ -50,13 +50,22 @@ do
 done # }}}
 
 shift $((OPTIND-1))
-
 : "${name:=slamd}"
-[ -d /tmp/slamd-mux ] || mkdir -p /tmp/slamd-mux
+
+$myname build . -f Dockerfile.tmux -t "$name-tmux" -t "bougyman/$name-tmux"
+id=$($myname run -d --rm "$name-tmux")
+$myname cp "$id":/usr/local/bin/tmux usr/local/bin/tmux
+$myname container stop "$id"
+
+set -x
+$myname build . -f Dockerfile.slamd-server -t "$name-slamd-server" -t "bougyman/$name-slamd-server"
+id=$($myname run -d --rm "$name-slamd-server")
+$myname cp "$id":/usr/src/slamd/build/package/slamd usr/local/slamd
+$myname container stop "$id"
 
 : "${db:=empty}"
 dbdir="$here/db/$db"
 [ -d "${dbdir}" ] || mkdir -vp "${dbdir}"
 
-$myname build . -t "$name"
+$myname build . -t "$name" "@$"
 # vim: set foldmethod=marker et ts=4 sts=4 sw=4 :

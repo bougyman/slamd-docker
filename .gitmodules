@@ -4,3 +4,6 @@
 [submodule "tmux"]
 	path = tmux
 	url = https://github.com/tmux/tmux
+[submodule "void-mklive"]
+	path = void-mklive
+	url = https://github.com/void-linux/void-mklive

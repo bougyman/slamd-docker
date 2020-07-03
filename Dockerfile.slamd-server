@@ -13,16 +13,13 @@ RUN xbps-install -Syu xbps && \
     rm -rvf /usr/share/man/* && \
     rm -rvf /usr/lib/gconv/libCNS.so /usr/lib/gconv/IBM* /usr/lib/gconv/BIG5HKSCS.so && \
     rm -rvf /var/cache/xbps/*
-RUN xbps-install -y libevent ncurses-base openjdk11
-COPY service/slamd-server /etc/sv/slamd-server
-COPY service/slamd-client /etc/sv/slamd-client
-COPY service/tmux /etc/sv/tmux
-COPY usr/local/bin/tmux /usr/local/bin/tmux
-COPY usr/local/slamd /usr/local/slamd
-RUN mkdir -p /etc/runit/runsvdir/slamd && ln -s /etc/runit/runsvdir/current /service && \
-    runsvchdir slamd && ln -s /etc/sv/slamd-client /service && \
-    ln -s /etc/sv/tmux /service && ln -s /etc/sv/slamd-server /service && mkdir -vp /home/slamd
+COPY upstream /usr/src/slamd
+RUN xbps-install -y unzip openjdk11
+RUN cd /usr/src/slamd && ./build.sh && sed -i -e 's/\(exec.*\) start/\1 run/' build/package/slamd/bin/startup.sh && \
+    cd /usr/src/slamd && \
+    mkdir -vp /etc/runit/runsvdir/slamd && \
+    cd /usr/src/slamd/build/package/slamd && unzip slamd-client-*.zip && \
+    runsvchdir slamd && ln -s /etc/runit/runsvdir/current /service
+RUN xbps-install -y tmux ncurses-base
 WORKDIR /home/slamd
-# For debugging
-#CMD /usr/local/bin/tmux
 ENTRYPOINT ["/sbin/runsvdir", "-P", "/service", "'LOG: ..............................................'"]
