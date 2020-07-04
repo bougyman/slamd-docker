@@ -1,5 +1,7 @@
 #!/bin/sh
 exec 2>&1
+JRE_HOME=/usr/lib/jvm/java-1.8-openjdk/jre
+export JRE_HOME
 : "${SLAMD_ADDRESS:=127.0.0.1}"
 : "${slam_port:=3000}"
 : "${slamd_manager_port:=3001}"
